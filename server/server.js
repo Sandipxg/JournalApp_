@@ -20,10 +20,12 @@ try {
   console.error('Error creating data file:', error)
 }
 
-const frontendUrl = process.env.FRONTEND_URL ? process.env.FRONTEND_URL.trim().replace(/\/+$/, '') : '*';
-
 app.use(cors({
-  origin: frontendUrl
+  origin: function (origin, callback) {
+    // Allow any origin
+    callback(null, true);
+  },
+  credentials: true
 }))
 app.use(express.json())
 
