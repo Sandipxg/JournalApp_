@@ -20,8 +20,10 @@ try {
   console.error('Error creating data file:', error)
 }
 
+const frontendUrl = process.env.FRONTEND_URL ? process.env.FRONTEND_URL.replace(/\/$/, '') : '*';
+
 app.use(cors({
-  origin: process.env.FRONTEND_URL || '*'
+  origin: frontendUrl
 }))
 app.use(express.json())
 
@@ -43,13 +45,13 @@ app.post('/api/entries', (req, res) => {
   try {
     const data = fs.readFileSync(DATA_FILE, 'utf-8')
     const entries = JSON.parse(data)
-    
+
     const newEntry = {
       id: Date.now(),
       title: req.body.title,
       content: req.body.content,
     }
-    
+
     entries.unshift(newEntry)
     fs.writeFileSync(DATA_FILE, JSON.stringify(entries))
     res.json(newEntry)
