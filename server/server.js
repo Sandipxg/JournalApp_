@@ -1,4 +1,4 @@
-﻿import express from 'express'
+import express from 'express'
 import cors from 'cors'
 import fs from 'fs'
 import path from 'path'
@@ -73,5 +73,5 @@ app.delete('/api/entries/:id', (req, res) => {
 })
 
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(Server running on port )
+  console.log(`Server running on port ${PORT}`)
 })
