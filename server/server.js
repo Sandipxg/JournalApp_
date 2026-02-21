@@ -20,7 +20,7 @@ try {
   console.error('Error creating data file:', error)
 }
 
-const frontendUrl = process.env.FRONTEND_URL ? process.env.FRONTEND_URL.replace(/\/$/, '') : '*';
+const frontendUrl = process.env.FRONTEND_URL ? process.env.FRONTEND_URL.trim().replace(/\/+$/, '') : '*';
 
 app.use(cors({
   origin: frontendUrl
