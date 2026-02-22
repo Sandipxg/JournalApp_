@@ -1,24 +1,18 @@
 import express from 'express'
 import cors from 'cors'
-import fs from 'fs'
-import path from 'path'
-import { fileURLToPath } from 'url'
+import pg from 'pg'
+import dotenv from 'dotenv'
 
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = path.dirname(__filename)
+dotenv.config()
 
 const app = express()
 const PORT = process.env.PORT || 3001
-const DATA_FILE = path.join(__dirname, 'entries.json')
 
-try {
-  if (!fs.existsSync(DATA_FILE)) {
-    fs.writeFileSync(DATA_FILE, '[]')
-    console.log('Created entries.json file')
-  }
-} catch (error) {
-  console.error('Error creating data file:', error)
-}
+// Database connection pool
+const pool = new pg.Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: { rejectUnauthorized: false } // Required for most cloud databases
+})
 
 app.use(cors({
   origin: function (origin, callback) {
@@ -29,53 +23,60 @@ app.use(cors({
 }))
 app.use(express.json())
 
-app.get('/', (req, res) => {
-  res.json({ message: 'Journal API is running!' })
+// Initialize the database table
+app.listen(PORT, '0.0.0.0', async () => {
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS entries (
+        id BIGINT PRIMARY KEY,
+        title TEXT NOT NULL,
+        content TEXT NOT NULL
+      )
+    `)
+    console.log('Database initialized')
+  } catch (err) {
+    console.error('Failed to initialize database (Ensure DATABASE_URL is set)', err)
+  }
+  console.log(`Server running on port ${PORT}`)
 })
 
-app.get('/api/entries', (req, res) => {
+app.get('/', (req, res) => {
+  res.json({ message: 'Journal API is running on PostgreSQL!' })
+})
+
+app.get('/api/entries', async (req, res) => {
   try {
-    const data = fs.readFileSync(DATA_FILE, 'utf-8')
-    res.json(JSON.parse(data))
+    // ORDER BY id DESC to place newest entries first
+    const result = await pool.query('SELECT * FROM entries ORDER BY id DESC')
+    res.json(result.rows)
   } catch (error) {
     console.error('Error reading entries:', error)
     res.status(500).json({ error: 'Failed to read entries' })
   }
 })
 
-app.post('/api/entries', (req, res) => {
+app.post('/api/entries', async (req, res) => {
   try {
-    const data = fs.readFileSync(DATA_FILE, 'utf-8')
-    const entries = JSON.parse(data)
+    const newEntryId = Date.now()
+    const { title, content } = req.body
 
-    const newEntry = {
-      id: Date.now(),
-      title: req.body.title,
-      content: req.body.content,
-    }
-
-    entries.unshift(newEntry)
-    fs.writeFileSync(DATA_FILE, JSON.stringify(entries))
-    res.json(newEntry)
+    const result = await pool.query(
+      'INSERT INTO entries (id, title, content) VALUES ($1, $2, $3) RETURNING *',
+      [newEntryId, title, content]
+    )
+    res.json(result.rows[0])
   } catch (error) {
     console.error('Error adding entry:', error)
     res.status(500).json({ error: 'Failed to add entry' })
   }
 })
 
-app.delete('/api/entries/:id', (req, res) => {
+app.delete('/api/entries/:id', async (req, res) => {
   try {
-    const data = fs.readFileSync(DATA_FILE, 'utf-8')
-    const entries = JSON.parse(data)
-    const newEntries = entries.filter(e => e.id != req.params.id)
-    fs.writeFileSync(DATA_FILE, JSON.stringify(newEntries))
+    await pool.query('DELETE FROM entries WHERE id = $1', [req.params.id])
     res.json({ message: 'deleted' })
   } catch (error) {
     console.error('Error deleting entry:', error)
     res.status(500).json({ error: 'Failed to delete entry' })
   }
-})
-
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`Server running on port ${PORT}`)
 })

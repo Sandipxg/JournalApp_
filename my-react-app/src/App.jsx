@@ -8,7 +8,8 @@ function App() {
 
   const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
 
-  // Load entries from backend on component mount
+  // Load entries from backend on component for exactly once at starting
+  // useEffect runs code block after a particular given interval
   useEffect(() => {
     fetch(`${API_URL}/api/entries`)
       .then(res => res.json())
@@ -90,7 +91,7 @@ function App() {
               <p>No entries yet. Start writing your first journal entry!</p>
             </div>
           ) : (
-            entries.map(entry => (
+            entries.map(entry => ( //iterate through whole array and throw html chunk for every item in it 
               <div key={entry.id} className="entry-card">
                 <div className="entry-header">
                   <h3>{entry.title}</h3>
