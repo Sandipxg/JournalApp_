@@ -26,9 +26,10 @@ app.use(express.json())
 // Initialize the database table
 app.listen(PORT, '0.0.0.0', async () => {
   try {
+    // We use GENERATED ALWAYS AS IDENTITY for automatic, unique IDs
     await pool.query(`
       CREATE TABLE IF NOT EXISTS entries (
-        id BIGINT PRIMARY KEY,
+        id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
         title TEXT NOT NULL,
         content TEXT NOT NULL
       )
@@ -57,12 +58,12 @@ app.get('/api/entries', async (req, res) => {
 
 app.post('/api/entries', async (req, res) => {
   try {
-    const newEntryId = Date.now()
     const { title, content } = req.body
 
+    // Database now handles ID generation automatically
     const result = await pool.query(
-      'INSERT INTO entries (id, title, content) VALUES ($1, $2, $3) RETURNING *',
-      [newEntryId, title, content]
+      'INSERT INTO entries (title, content) VALUES ($1, $2) RETURNING *',
+      [title, content]
     )
     res.json(result.rows[0])
   } catch (error) {
