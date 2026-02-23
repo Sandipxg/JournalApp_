@@ -3,8 +3,8 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "start": "node --loader ts-node/esm server.ts",
-    "dev": "nodemon --loader ts-node/esm server.ts",
+    "start": "tsx server.ts",
+    "dev": "tsx watch server.ts",
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
@@ -20,6 +20,7 @@
     "@types/pg": "^8.16.0",
     "nodemon": "^3.1.14",
     "ts-node": "^10.9.2",
+    "tsx": "^4.21.0",
     "typescript": "^5.9.3"
   }
 }
