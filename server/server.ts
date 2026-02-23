@@ -60,16 +60,21 @@ app.get('/api/entries', async (req: Request, res: Response) => {
 app.post('/api/entries', async (req: Request, res: Response) => {
   try {
     const { title, content } = req.body
+    console.log('Received new entry request:', { title, content })
 
     // Database now handles ID generation automatically
     const result = await pool.query(
       'INSERT INTO entries (title, content) VALUES ($1, $2) RETURNING *',
       [title, content]
     )
+    console.log('Successfully saved entry:', result.rows[0])
     res.json(result.rows[0])
   } catch (error) {
-    console.error('Error adding entry:', error)
-    res.status(500).json({ error: 'Failed to add entry' })
+    console.error('Error adding entry. Details:', error)
+    res.status(500).json({
+      error: 'Failed to add entry',
+      details: error instanceof Error ? error.message : String(error)
+    })
   }
 })
 
