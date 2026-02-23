@@ -1,4 +1,4 @@
-import express from 'express'
+import express, { Request, Response } from 'express'
 import cors from 'cors'
 import pg from 'pg'
 import dotenv from 'dotenv'
@@ -6,9 +6,10 @@ import dotenv from 'dotenv'
 dotenv.config()
 
 const app = express()
-const PORT = process.env.PORT || 3001
+// app.listen strictly wants number so..
+const PORT = Number(process.env.PORT) || 3001
 
-// Database connection pool
+// Database connection pool ( stock of many connections , users borrows connections and return it to pool after using it )
 const pool = new pg.Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: { rejectUnauthorized: false } // Required for most cloud databases
@@ -41,11 +42,11 @@ app.listen(PORT, '0.0.0.0', async () => {
   console.log(`Server running on port ${PORT}`)
 })
 
-app.get('/', (req, res) => {
+app.get('/', (req: Request, res: Response) => {
   res.json({ message: 'Journal API is running on PostgreSQL!' })
 })
 
-app.get('/api/entries', async (req, res) => {
+app.get('/api/entries', async (req: Request, res: Response) => {
   try {
     // ORDER BY id DESC to place newest entries first
     const result = await pool.query('SELECT * FROM entries ORDER BY id DESC')
@@ -56,7 +57,7 @@ app.get('/api/entries', async (req, res) => {
   }
 })
 
-app.post('/api/entries', async (req, res) => {
+app.post('/api/entries', async (req: Request, res: Response) => {
   try {
     const { title, content } = req.body
 
@@ -72,7 +73,7 @@ app.post('/api/entries', async (req, res) => {
   }
 })
 
-app.delete('/api/entries/:id', async (req, res) => {
+app.delete('/api/entries/:id', async (req: Request, res: Response) => {
   try {
     await pool.query('DELETE FROM entries WHERE id = $1', [req.params.id])
     res.json({ message: 'deleted' })
