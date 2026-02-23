@@ -1,8 +1,15 @@
 import { useState, useEffect } from 'react'
 import './App.css'
 
+interface Entry {
+  id: number;
+  title: string;
+  content: string;
+}
+
 function App() {
-  const [entries, setEntries] = useState([])
+  // ensured compiler that entries is not empty 
+  const [entries, setEntries] = useState<Entry[]>([])
   const [currentEntry, setCurrentEntry] = useState('')
   const [currentTitle, setCurrentTitle] = useState('')
 
@@ -45,7 +52,8 @@ function App() {
     }
   }
 
-  const deleteEntry = (id) => {
+  // since we defined id as number in interface . 
+  const deleteEntry = (id: number) => {
     fetch(`${API_URL}/api/entries/${id}`, {
       method: "DELETE"
     })
@@ -77,7 +85,7 @@ function App() {
             value={currentEntry}
             onChange={(e) => setCurrentEntry(e.target.value)}
             className="entry-textarea"
-            rows="6"
+            rows={6} // must be number cant accept "6"
           />
           <button onClick={addEntry} className="add-button">
             Add Entry
