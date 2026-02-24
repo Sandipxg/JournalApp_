@@ -5,6 +5,7 @@
   "scripts": {
     "start": "tsx server.ts",
     "dev": "tsx watch server.ts",
+    "db": "tsx db/config.ts",
     "type-check": "tsc --noEmit"
   },
   "dependencies": {

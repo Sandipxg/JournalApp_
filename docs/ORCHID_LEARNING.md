@@ -174,3 +174,22 @@ Here is a quick reference table showing common raw SQL queries and their direct 
 | **Count Rows** | `SELECT COUNT(*) FROM entries` | `db.entry.count()` | Returns the number of rows as a number. |
 | **Raw Query** | `SELECT * FROM entries WHERE id = $1` | `db.$query\`SELECT * FROM entries WHERE id = ${id}\`` | Safely runs executing raw SQL with parameter binding. |
 
+---
+
+## 7. How Automatic Migrations Work (rake-db)
+
+Think of `rake-db` as the bridge between your **TypeScript Code** and your **PostgreSQL Database**.
+
+### How it works
+Imagine this scenario:
+
+1.  **You open `EntryTable.ts`** and add a new column: `createdAt: t.timestamps().createdAt`.
+2.  **You go to your terminal** and type `npm run db pull`.
+3.  **When you run that command**, rake-db wakes up and does the following:
+
+- "Let me look at `EntryTable.ts`. Ah, I see a `createdAt` column here."
+- "Let me look at the actual PostgreSQL database. Hmm, there is no `createdAt` column in the database yet."
+- "I will automatically generate a new file called `0002_add_createdAt_to_entries.ts` and write the code to create the column."
+
+This ensures your **Code (TypeScript Types)** and **Database (Schema)** are always in sync without you ever writing raw SQL migrations by hand.
+
