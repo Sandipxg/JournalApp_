@@ -1,74 +1,62 @@
 import { useState, useEffect } from 'react'
 import './App.css'
-
-interface Entry {
-  id: number;
-  title: string;
-  content: string;
-}
+import { client } from './rpc'
+import type { Entry } from '@shared/contract'
 
 function App() {
-  // ensured compiler that entries is not empty 
   const [entries, setEntries] = useState<Entry[]>([])
   const [currentEntry, setCurrentEntry] = useState('')
   const [currentTitle, setCurrentTitle] = useState('')
 
-  const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
-
-  // Load entries from backend on component for exactly once at starting
-  // useEffect runs code block after a particular given interval
+  // Load entries from backend on component mount
   useEffect(() => {
-    fetch(`${API_URL}/api/entries`)
-      .then(res => res.json())
-      .then(data => {
-        if (Array.isArray(data)) {
-          setEntries(data);
-        }
-      })
-      .catch(err => console.error("Error fetching entries:", err));
+    const fetchEntries = async () => {
+      try {
+        const data = await client.getEntries()
+        // oRPC returns the data directly
+        setEntries(data)
+      } catch (err) {
+        console.error("Error fetching entries:", err)
+      }
+    }
+    fetchEntries()
   }, [])
 
-  const addEntry = () => {
+  const addEntry = async () => {
     if (currentEntry.trim() && currentTitle.trim()) {
-      const newEntryData = {
-        title: currentTitle,
-        content: currentEntry,
-      }
-
-      fetch(`${API_URL}/api/entries`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newEntryData)
-      })
-        .then(res => res.json())
-        .then(savedEntry => {
-          if (savedEntry.id) {
-            setEntries([savedEntry, ...entries])
-            setCurrentEntry('')
-            setCurrentTitle('')
-          }
+      try {
+        const savedEntry = await client.addEntry({
+          title: currentTitle,
+          content: currentEntry,
         })
-        .catch(err => console.error("Error saving entry:", err));
+
+        if (savedEntry && savedEntry.id) {
+          setEntries(prev => [savedEntry, ...prev])
+          setCurrentEntry('')
+          setCurrentTitle('')
+        }
+      } catch (err) {
+        console.error("Error saving entry:", err)
+      }
     }
   }
 
-  // since we defined id as number in interface . 
-  const deleteEntry = (id: number) => {
-    fetch(`${API_URL}/api/entries/${id}`, {
-      method: "DELETE"
-    })
-      .then(res => res.json())
-      .then(() => {
-        setEntries(entries.filter(entry => entry.id !== id))
-      })
-      .catch(err => console.error("Error deleting entry:", err));
+  const deleteEntry = async (id: number) => {
+    try {
+      const result = await client.deleteEntry({ id })
+      if (result.success) {
+        setEntries(prev => prev.filter(entry => entry.id !== id))
+      }
+    } catch (err) {
+      console.error("Error deleting entry:", err)
+    }
   }
 
   return (
     <div className="app">
       <header className="header">
         <h1>📖 My Journal</h1>
-        <p>Capture your thoughts and memories</p>
+        <p>Capture your thoughts and memories (oRPC Powered)</p>
       </header>
 
       <div className="container">
@@ -85,7 +73,7 @@ function App() {
             value={currentEntry}
             onChange={(e) => setCurrentEntry(e.target.value)}
             className="entry-textarea"
-            rows={6} // must be number cant accept "6"
+            rows={6}
           />
           <button onClick={addEntry} className="add-button">
             Add Entry
@@ -99,7 +87,7 @@ function App() {
               <p>No entries yet. Start writing your first journal entry!</p>
             </div>
           ) : (
-            entries.map(entry => ( //iterate through whole array and throw html chunk for every item in it 
+            entries.map(entry => (
               <div key={entry.id} className="entry-card">
                 <div className="entry-header">
                   <h3>{entry.title}</h3>
