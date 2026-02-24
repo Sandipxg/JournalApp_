@@ -1,19 +1,13 @@
 import express, { Request, Response } from 'express'
 import cors from 'cors'
-import pg from 'pg'
 import dotenv from 'dotenv'
+import { db } from './db/db.js'
 
 dotenv.config()
 
 const app = express()
 // app.listen strictly wants number so..
 const PORT = Number(process.env.PORT) || 3001
-
-// Database connection pool ( stock of many connections , users borrows connections and return it to pool after using it )
-const pool = new pg.Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: { rejectUnauthorized: false } // Required for most cloud databases
-})
 
 app.use(cors({
   origin: function (origin, callback) {
@@ -27,15 +21,8 @@ app.use(express.json())
 // Initialize the database table
 app.listen(PORT, '0.0.0.0', async () => {
   try {
-    // We use GENERATED ALWAYS AS IDENTITY for automatic, unique IDs
-    await pool.query(`
-      CREATE TABLE IF NOT EXISTS entries (
-        id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-        title TEXT NOT NULL,
-        content TEXT NOT NULL
-      )
-    `)
-    console.log('Database initialized')
+    console.log('Connecting via Orchid ORM...')
+    // Removed raw SQL table creation in favor of managing it via Orchid ORM or migrations in the future.
   } catch (err) {
     console.error('Failed to initialize database (Ensure DATABASE_URL is set)', err)
   }
@@ -48,9 +35,9 @@ app.get('/', (req: Request, res: Response) => {
 
 app.get('/api/entries', async (req: Request, res: Response) => {
   try {
-    // ORDER BY id DESC to place newest entries first
-    const result = await pool.query('SELECT * FROM entries ORDER BY id DESC')
-    res.json(result.rows)
+    // Fetch all entries, ordered by ID descending
+    const entries = await db.entry.order({ id: 'DESC' })
+    res.json(entries)
   } catch (error) {
     console.error('Error reading entries:', error)
     res.status(500).json({ error: 'Failed to read entries' })
@@ -63,12 +50,9 @@ app.post('/api/entries', async (req: Request, res: Response) => {
     console.log('Received new entry request:', { title, content })
 
     // Database now handles ID generation automatically
-    const result = await pool.query(
-      'INSERT INTO entries (title, content) VALUES ($1, $2) RETURNING *',
-      [title, content]
-    )
-    console.log('Successfully saved entry:', result.rows[0])
-    res.json(result.rows[0])
+    const newEntry = await db.entry.create({ title, content })
+    console.log('Successfully saved entry:', newEntry)
+    res.json(newEntry)
   } catch (error) {
     console.error('Error adding entry. Details:', error)
     res.status(500).json({
@@ -80,7 +64,7 @@ app.post('/api/entries', async (req: Request, res: Response) => {
 
 app.delete('/api/entries/:id', async (req: Request, res: Response) => {
   try {
-    await pool.query('DELETE FROM entries WHERE id = $1', [req.params.id])
+    await db.entry.find(Number(req.params.id)).delete()
     res.json({ message: 'deleted' })
   } catch (error) {
     console.error('Error deleting entry:', error)
