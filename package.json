@@ -1,0 +1,14 @@
+{
+  "name": "journal-app-root",
+  "private": true,
+  "workspaces": [
+    "server",
+    "my-react-app",
+    "shared"
+  ],
+  "scripts": {
+    "install:all": "npm install",
+    "dev:server": "npm run dev --workspace=server",
+    "dev:client": "npm run dev --workspace=my-react-app"
+  }
+}

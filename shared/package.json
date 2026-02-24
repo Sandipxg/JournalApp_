@@ -1,5 +1,9 @@
 {
     "name": "journal-shared",
     "version": "1.0.0",
-    "type": "module"
+    "type": "module",
+    "dependencies": {
+        "@orpc/contract": "^1.13.5",
+        "zod": "^4.3.6"
+    }
 }
