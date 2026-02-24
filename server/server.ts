@@ -1,12 +1,13 @@
 import express, { Request, Response } from 'express'
 import cors from 'cors'
 import dotenv from 'dotenv'
+import { RPCHandler } from '@orpc/server/node'
+import { router } from './router.js'
 import { db } from './db/db.js'
 
 dotenv.config()
 
 const app = express()
-// app.listen strictly wants number so..
 const PORT = Number(process.env.PORT) || 3001
 
 app.use(cors({
@@ -18,56 +19,35 @@ app.use(cors({
 }))
 app.use(express.json())
 
-// Initialize the database table
+const rpcHandler = new RPCHandler(router)
+
+// oRPC endpoint – matches /rpc and any sub-path
+app.all(['/rpc', '/rpc/*'], async (req, res) => {
+  try {
+    const matched = await rpcHandler.handle(req, res, { prefix: '/rpc' })
+    if (!matched.matched) {
+      res.status(404).json({ error: 'Not Found' })
+    }
+  } catch (error) {
+    console.error('oRPC Error:', error)
+    if (!res.headersSent) {
+      res.status(500).json({ error: 'Internal Server Error' })
+    }
+  }
+})
+
+// Root endpoint
+app.get('/', (req, res) => {
+  res.json({ message: 'Journal oRPC API is running with Orchid ORM!' })
+})
+
+// Server initialization and database setup
 app.listen(PORT, '0.0.0.0', async () => {
   try {
     console.log('Connecting via Orchid ORM...')
-    // Removed raw SQL table creation in favor of managing it via Orchid ORM or migrations in the future.
+    // Database connectivity is handled by Orchid ORM
   } catch (err) {
     console.error('Failed to initialize database (Ensure DATABASE_URL is set)', err)
   }
-  console.log(`Server running on port ${PORT}`)
-})
-
-app.get('/', (req: Request, res: Response) => {
-  res.json({ message: 'Journal API is running on PostgreSQL!' })
-})
-
-app.get('/api/entries', async (req: Request, res: Response) => {
-  try {
-    // Fetch all entries, ordered by ID descending
-    const entries = await db.entry.order({ id: 'DESC' })
-    res.json(entries)
-  } catch (error) {
-    console.error('Error reading entries:', error)
-    res.status(500).json({ error: 'Failed to read entries' })
-  }
-})
-
-app.post('/api/entries', async (req: Request, res: Response) => {
-  try {
-    const { title, content } = req.body
-    console.log('Received new entry request:', { title, content })
-
-    // Database now handles ID generation automatically
-    const newEntry = await db.entry.create({ title, content })
-    console.log('Successfully saved entry:', newEntry)
-    res.json(newEntry)
-  } catch (error) {
-    console.error('Error adding entry. Details:', error)
-    res.status(500).json({
-      error: 'Failed to add entry',
-      details: error instanceof Error ? error.message : String(error)
-    })
-  }
-})
-
-app.delete('/api/entries/:id', async (req: Request, res: Response) => {
-  try {
-    await db.entry.find(Number(req.params.id)).delete()
-    res.json({ message: 'deleted' })
-  } catch (error) {
-    console.error('Error deleting entry:', error)
-    res.status(500).json({ error: 'Failed to delete entry' })
-  }
+  console.log(`oRPC endpoint: http://localhost:${PORT}/rpc`)
 })

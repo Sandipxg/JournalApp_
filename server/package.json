@@ -9,12 +9,15 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
+    "@orpc/contract": "^1.13.5",
+    "@orpc/server": "^1.13.5",
     "cors": "^2.8.5",
     "dotenv": "^17.3.1",
     "express": "^4.18.2",
     "orchid-orm": "^1.62.4",
     "pg": "^8.18.0",
-    "tsx": "^4.21.0"
+    "tsx": "^4.21.0",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@types/cors": "^2.8.19",
