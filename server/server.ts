@@ -12,12 +12,11 @@ const PORT = Number(process.env.PORT) || 3001
 
 app.use(cors({
   origin: function (origin, callback) {
-    // Allow any origin
     callback(null, true);
   },
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   credentials: true
 }))
-app.use(express.json())
 
 const rpcHandler = new RPCHandler(router)
 
@@ -35,6 +34,8 @@ app.all(['/rpc', '/rpc/*'], async (req, res) => {
     }
   }
 })
+
+app.use(express.json())
 
 // Root endpoint
 app.get('/', (req, res) => {
