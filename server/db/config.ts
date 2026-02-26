@@ -11,7 +11,6 @@ dotenv.config({ path: path.join(__dirname, '..', '.env') });
 
 const options = [{
     databaseURL: process.env.DATABASE_URL as string,
-    ssl: { rejectUnauthorized: false }
 }];
 
 const rakeDbResult = rakeDb({

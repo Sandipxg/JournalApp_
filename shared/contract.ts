@@ -11,7 +11,7 @@ export type Entry = z.infer<typeof EntrySchema>
 
 export const contract = oc.router({
     getEntries: oc
-        .output(z.array(EntrySchema)),
+        .output(z.any()),
 
     addEntry: oc
         .input(z.object({

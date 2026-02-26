@@ -44,3 +44,4 @@ Thumbs.db
 # Project-specific
 server/entries.json
 server/check-db.js
+server/debug.log

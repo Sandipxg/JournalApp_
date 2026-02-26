@@ -7,7 +7,6 @@ dotenv.config();
 export const db = orchidORM(
     {
         databaseURL: process.env.DATABASE_URL,
-        ssl: { rejectUnauthorized: false }
     },
     {
         entry: EntryTable,
