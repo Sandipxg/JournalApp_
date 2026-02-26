@@ -17,7 +17,7 @@ export const UserSchema = z.object({
 
 export const contract = oc.router({
     register: oc
-        .mutation()
+        .route({ method: 'POST' })
         .input(z.object({
             username: z.string().min(2),
             password: z.string().min(4),
@@ -25,7 +25,7 @@ export const contract = oc.router({
         .output(UserSchema),
 
     login: oc
-        .mutation()
+        .route({ method: 'POST' })
         .input(z.object({
             username: z.string(),
             password: z.string(),
@@ -33,12 +33,12 @@ export const contract = oc.router({
         .output(UserSchema),
 
     getEntries: oc
-        .query()
+        .route({ method: 'GET' })
         .input(z.object({ userId: z.number() }))
         .output(z.array(EntrySchema)),
 
     addEntry: oc
-        .mutation()
+        .route({ method: 'POST' })
         .input(z.object({
             title: z.string().min(1),
             content: z.string().min(1),
@@ -47,7 +47,7 @@ export const contract = oc.router({
         .output(EntrySchema),
 
     deleteEntry: oc
-        .mutation()
+        .route({ method: 'POST' })
         .input(z.object({
             id: z.coerce.number(),
             userId: z.number(),
@@ -55,7 +55,7 @@ export const contract = oc.router({
         .output(z.object({ success: z.boolean() })),
 
     updateEntry: oc
-        .mutation()
+        .route({ method: 'POST' })
         .input(z.object({
             id: z.coerce.number(),
             title: z.string().optional(),
