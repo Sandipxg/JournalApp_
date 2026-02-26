@@ -6,42 +6,49 @@ import fs from 'fs'
 const i = implement(contract)
 
 const router = {
-    getEntries: i.getEntries.handler(async () => {
-        console.log("getEntries handler called")
-        try {
-            const result = await db.entry.order({ id: 'DESC' })
-            fs.writeFileSync('debug.log', `Result Type: ${typeof result}\nIs Array: ${Array.isArray(result)}\nData: ${JSON.stringify(result, (key, value) => typeof value === 'bigint' ? value.toString() : value, 2)}\n`)
-            return result
-        } catch (error: any) {
-            fs.writeFileSync('debug.log', `Error: ${error.message}\nStack: ${error.stack}\n`)
-            console.error("DB Error in getEntries:", error)
-            throw error
-        }
+    register: i.register.handler(async ({ input }) => {
+        const { username, password } = input
+        const existing = await db.user.where({ username }).exists()
+        if (existing) throw new Error('User already exists')
+
+        return await db.user.create({ username, password })
+    }),
+
+    login: i.login.handler(async ({ input }) => {
+        const { username, password } = input
+        const user = await db.user.where({ username, password }).take()
+        if (!user) throw new Error('Invalid credentials')
+        return user
+    }),
+
+    getEntries: i.getEntries.handler(async ({ input }) => {
+        return await db.entry.where({ userId: input.userId }).order({ id: 'DESC' })
     }),
 
     addEntry: i.addEntry.handler(async ({ input }) => {
-        const { title, content } = input
-        return await db.entry.create({ title, content })
+        const { title, content, userId } = input
+        return await db.entry.create({ title, content, userId })
     }),
 
     deleteEntry: i.deleteEntry.handler(async ({ input }) => {
-        await db.entry.find(input.id).delete()
+        const { id, userId } = input
+        await db.entry.where({ id, userId }).delete()
         return { success: true }
     }),
 
     updateEntry: i.updateEntry.handler(async ({ input }) => {
-        const { id, title, content } = input
-        const query = db.entry.find(id)
+        const { id, title, content, userId } = input
+        const query = db.entry.where({ id, userId })
 
         const updateData: any = {}
         if (title !== undefined) updateData.title = title
         if (content !== undefined) updateData.content = content
 
         if (Object.keys(updateData).length > 0) {
-            return await query.update(updateData).select('*')
+            return await query.update(updateData).select('*').take()
         }
 
-        return await query.select('*')
+        return await query.select('*').take()
     }),
 }
 
