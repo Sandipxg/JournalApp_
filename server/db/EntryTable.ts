@@ -8,5 +8,6 @@ export class EntryTable extends BaseTable {
         id: t.identity().primaryKey(),
         title: t.text(),
         content: t.text(),
+        userId: t.integer().foreignKey('users', 'id').index(),
     }));
 }

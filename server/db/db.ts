@@ -1,5 +1,6 @@
 import { orchidORM } from 'orchid-orm/node-postgres';
 import { EntryTable } from './EntryTable.js';
+import { UserTable } from './UserTable.js';
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -10,5 +11,6 @@ export const db = orchidORM(
     },
     {
         entry: EntryTable,
+        user: UserTable,
     }
 );

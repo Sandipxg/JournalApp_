@@ -4,30 +4,66 @@ import { client } from './rpc'
 import type { Entry } from '@shared/contract'
 
 function App() {
+  const [userId, setUserId] = useState<number | null>(() => {
+    const saved = localStorage.getItem('userId')
+    return saved ? parseInt(saved) : null
+  })
+  const [username, setUsername] = useState('')
+  const [password, setPassword] = useState('')
+  const [isRegistering, setIsRegistering] = useState(false)
+  const [error, setError] = useState('')
+
   const [entries, setEntries] = useState<Entry[]>([])
   const [currentEntry, setCurrentEntry] = useState('')
   const [currentTitle, setCurrentTitle] = useState('')
 
-  // Load entries from backend on component mount
+  // Load entries from backend on component mount or when userId changes
   useEffect(() => {
+    if (!userId) {
+      setEntries([])
+      return
+    }
+
     const fetchEntries = async () => {
       try {
-        const data = await client.getEntries()
-        // oRPC returns the data directly
+        const data = await client.getEntries({ userId })
         setEntries(data)
       } catch (err) {
         console.error("Error fetching entries:", err)
       }
     }
     fetchEntries()
-  }, [])
+  }, [userId])
+
+  const handleAuth = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setError('')
+    try {
+      const result = isRegistering
+        ? await client.register({ username, password })
+        : await client.login({ username, password })
+
+      setUserId(result.id)
+      localStorage.setItem('userId', result.id.toString())
+      setUsername('')
+      setPassword('')
+    } catch (err: any) {
+      setError(err.message || 'Auth failed')
+    }
+  }
+
+  const logout = () => {
+    setUserId(null)
+    localStorage.removeItem('userId')
+  }
 
   const addEntry = async () => {
-    if (currentEntry.trim() && currentTitle.trim()) {
+    if (currentEntry.trim() && currentTitle.trim() && userId) {
       try {
         const savedEntry = await client.addEntry({
           title: currentTitle,
           content: currentEntry,
+          userId,
         })
 
         if (savedEntry && savedEntry.id) {
@@ -42,8 +78,9 @@ function App() {
   }
 
   const deleteEntry = async (id: number) => {
+    if (!userId) return
     try {
-      const result = await client.deleteEntry({ id })
+      const result = await client.deleteEntry({ id, userId })
       if (result.success) {
         setEntries(prev => prev.filter(entry => entry.id !== id))
       }
@@ -52,11 +89,61 @@ function App() {
     }
   }
 
+  if (!userId) {
+    return (
+      <div className="app">
+        <header className="header">
+          <h1>📖 My Journal</h1>
+          <p>Login to capture your thoughts</p>
+        </header>
+
+        <div className="container auth-container">
+          <form className="entry-form auth-form" onSubmit={handleAuth}>
+            <h2>{isRegistering ? 'Create Account' : 'Welcome Back'}</h2>
+            {error && <p className="error-message">{error}</p>}
+            <input
+              type="text"
+              placeholder="Username"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              className="title-input"
+              required
+            />
+            <input
+              type="password"
+              placeholder="Password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="title-input"
+              required
+            />
+            <button type="submit" className="add-button">
+              {isRegistering ? 'Sign Up' : 'Log In'}
+            </button>
+            <p className="auth-toggle">
+              {isRegistering ? 'Already have an account? ' : "Don't have an account? "}
+              <button
+                type="button"
+                onClick={() => setIsRegistering(!isRegistering)}
+                className="link-button"
+              >
+                {isRegistering ? 'Log In' : 'Sign Up'}
+              </button>
+            </p>
+          </form>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="app">
       <header className="header">
+        <div className="user-info">
+          <button onClick={logout} className="logout-button">Logout</button>
+        </div>
         <h1>📖 My Journal</h1>
-        <p>Capture your thoughts and memories (oRPC Powered)</p>
+        <p>Capture your thoughts and memories</p>
       </header>
 
       <div className="container">
