@@ -45,3 +45,6 @@ Thumbs.db
 server/entries.json
 server/check-db.js
 server/debug.log
+
+#agents 
+.agent/*
