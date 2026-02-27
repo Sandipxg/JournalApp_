@@ -232,7 +232,10 @@ body {
 .user-info {
   display: flex;
   justify-content: flex-end;
+  align-items: center;
+  gap: 15px;
   padding-bottom: 20px;
+  color: white;
 }
 
 .logout-button {
