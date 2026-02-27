@@ -7,6 +7,7 @@ const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
 
 const link = new RPCLink({
     url: `${API_URL}/rpc`,
+    fetch: (url, options) => fetch(url, { ...options, credentials: 'include' })
 })
 
 export const client = createORPCClient<RouterClient<AppRouter>>(link)

@@ -2,14 +2,14 @@ import { useState, useEffect } from 'react'
 import './App.css'
 import { client } from './rpc'
 import type { Entry } from '@shared/contract'
+import { authClient } from './lib/auth-client'
 
 function App() {
-  const [userId, setUserId] = useState<number | null>(() => {
-    const saved = localStorage.getItem('userId')
-    return saved ? parseInt(saved) : null
-  })
-  const [username, setUsername] = useState('')
+  const { data: session, isPending } = authClient.useSession()
+
+  const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [name, setName] = useState('')
   const [isRegistering, setIsRegistering] = useState(false)
   const [error, setError] = useState('')
 
@@ -17,53 +17,61 @@ function App() {
   const [currentEntry, setCurrentEntry] = useState('')
   const [currentTitle, setCurrentTitle] = useState('')
 
-  // Load entries from backend on component mount or when userId changes
+  // Load entries from backend when session is available
   useEffect(() => {
-    if (!userId) {
+    if (!session?.user) {
       setEntries([])
       return
     }
 
     const fetchEntries = async () => {
       try {
-        const data = await client.getEntries({ userId })
+        const data = await client.getEntries({})
         setEntries(data)
       } catch (err) {
         console.error("Error fetching entries:", err)
       }
     }
     fetchEntries()
-  }, [userId])
+  }, [session?.user])
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
     try {
-      const result = isRegistering
-        ? await client.register({ username, password })
-        : await client.login({ username, password })
+      if (isRegistering) {
+        const { error } = await authClient.signUp.email({
+          email,
+          password,
+          name,
+        })
+        if (error) throw error
+      } else {
+        const { error } = await authClient.signIn.email({
+          email,
+          password,
+        })
+        if (error) throw error
+      }
 
-      setUserId(result.id)
-      localStorage.setItem('userId', result.id.toString())
-      setUsername('')
+      setEmail('')
       setPassword('')
+      setName('')
     } catch (err: any) {
       setError(err.message || 'Auth failed')
     }
   }
 
-  const logout = () => {
-    setUserId(null)
-    localStorage.removeItem('userId')
+  const logout = async () => {
+    await authClient.signOut()
   }
 
   const addEntry = async () => {
-    if (currentEntry.trim() && currentTitle.trim() && userId) {
+    if (currentEntry.trim() && currentTitle.trim() && session?.user) {
       try {
         const savedEntry = await client.addEntry({
           title: currentTitle,
           content: currentEntry,
-          userId,
         })
 
         if (savedEntry && savedEntry.id) {
@@ -78,9 +86,9 @@ function App() {
   }
 
   const deleteEntry = async (id: number) => {
-    if (!userId) return
+    if (!session?.user) return
     try {
-      const result = await client.deleteEntry({ id, userId })
+      const result = await client.deleteEntry({ id })
       if (result.success) {
         setEntries(prev => prev.filter(entry => entry.id !== id))
       }
@@ -89,7 +97,11 @@ function App() {
     }
   }
 
-  if (!userId) {
+  if (isPending) {
+    return <div className="app loading">Loading session...</div>
+  }
+
+  if (!session?.user) {
     return (
       <div className="app">
         <header className="header">
@@ -101,11 +113,21 @@ function App() {
           <form className="entry-form auth-form" onSubmit={handleAuth}>
             <h2>{isRegistering ? 'Create Account' : 'Welcome Back'}</h2>
             {error && <p className="error-message">{error}</p>}
+            {isRegistering && (
+              <input
+                type="text"
+                placeholder="Name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="title-input"
+                required
+              />
+            )}
             <input
-              type="text"
-              placeholder="Username"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
+              type="email"
+              placeholder="Email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               className="title-input"
               required
             />
@@ -140,6 +162,7 @@ function App() {
     <div className="app">
       <header className="header">
         <div className="user-info">
+          <span>Welcome, {session.user.name}</span>
           <button onClick={logout} className="logout-button">Logout</button>
         </div>
         <h1>📖 My Journal</h1>

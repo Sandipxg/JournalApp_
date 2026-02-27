@@ -3,42 +3,41 @@ import { contract } from '../shared/contract.js'
 import { db } from './db/db.js'
 import fs from 'fs'
 
-const i = implement(contract)
+import { auth } from './auth.js'
+
+const i = implement(contract).$context<{
+    db: typeof db
+    user: typeof auth.$Infer.Session.user | null
+    session: typeof auth.$Infer.Session.session | null
+}>()
 
 const router = {
-    register: i.register.handler(async ({ input }) => {
-        const { username, password } = input
-        const existing = await db.user.where({ username }).exists()
-        if (existing) throw new Error('User already exists')
-
-        return await db.user.create({ username, password })
+    getEntries: i.getEntries.handler(async ({ context }) => {
+        if (!context.user) throw new Error('Unauthorized')
+        return await context.db.entry.where({ userId: context.user.id }).order({ id: 'DESC' })
     }),
 
-    login: i.login.handler(async ({ input }) => {
-        const { username, password } = input
-        const user = await db.user.where({ username, password }).take()
-        if (!user) throw new Error('Invalid credentials')
-        return user
+    addEntry: i.addEntry.handler(async ({ input, context }) => {
+        if (!context.user) throw new Error('Unauthorized')
+        const { title, content } = input
+        return await context.db.entry.create({
+            title,
+            content,
+            userId: context.user.id
+        })
     }),
 
-    getEntries: i.getEntries.handler(async ({ input }) => {
-        return await db.entry.where({ userId: input.userId }).order({ id: 'DESC' })
-    }),
-
-    addEntry: i.addEntry.handler(async ({ input }) => {
-        const { title, content, userId } = input
-        return await db.entry.create({ title, content, userId })
-    }),
-
-    deleteEntry: i.deleteEntry.handler(async ({ input }) => {
-        const { id, userId } = input
-        await db.entry.where({ id, userId }).delete()
+    deleteEntry: i.deleteEntry.handler(async ({ input, context }) => {
+        if (!context.user) throw new Error('Unauthorized')
+        const { id } = input
+        await context.db.entry.where({ id, userId: context.user.id }).delete()
         return { success: true }
     }),
 
-    updateEntry: i.updateEntry.handler(async ({ input }) => {
-        const { id, title, content, userId } = input
-        const query = db.entry.where({ id, userId })
+    updateEntry: i.updateEntry.handler(async ({ input, context }) => {
+        if (!context.user) throw new Error('Unauthorized')
+        const { id, title, content } = input
+        const query = context.db.entry.where({ id, userId: context.user.id })
 
         const updateData: any = {}
         if (title !== undefined) updateData.title = title
