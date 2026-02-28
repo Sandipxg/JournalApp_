@@ -6,8 +6,20 @@ import { router } from './router.js'
 import { db } from './db/db.js'
 import { auth } from './auth.js'
 import { toNodeHandler } from "better-auth/node"
+import * as Sentry from "@sentry/node"
+import { nodeProfilingIntegration } from "@sentry/profiling-node"
 
 dotenv.config()
+
+// Ensure to call this before loading any modules that shouldn't be instrumented.
+Sentry.init({
+  dsn: "https://bd295f340adfd746c67e87f99e219ba6@o4510964654211072.ingest.us.sentry.io/4510964661354496",
+  integrations: [
+    nodeProfilingIntegration(),
+  ],
+  tracesSampleRate: 1.0,
+  profilesSampleRate: 1.0,
+});
 
 const app = express()
 const PORT = Number(process.env.PORT) || 3001
@@ -57,6 +69,9 @@ app.use(express.json())
 app.get('/', (req, res) => {
   res.json({ message: 'Journal oRPC API is running with Orchid ORM!' })
 })
+
+// Sentry error handler must be registered before any other error middleware, and after all controllers
+Sentry.setupExpressErrorHandler(app);
 
 // Server initialization and database setup
 app.listen(PORT, '0.0.0.0', async () => {
