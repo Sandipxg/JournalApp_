@@ -14,6 +14,7 @@
     "@orpc/client": "^1.13.5",
     "@orpc/contract": "^1.13.5",
     "@orpc/zod": "^1.13.5",
+    "@sentry/react": "^10.40.0",
     "better-auth": "^1.4.19",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",

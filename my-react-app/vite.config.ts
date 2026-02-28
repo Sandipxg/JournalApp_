@@ -14,4 +14,10 @@ export default defineConfig({
       '@shared': path.resolve(__dirname, '../shared'),
     },
   },
+  server: {
+    proxy: {
+      '/api': 'http://localhost:3001',
+      '/rpc': 'http://localhost:3001',
+    }
+  }
 })
