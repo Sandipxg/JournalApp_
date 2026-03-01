@@ -1,7 +1,0 @@
-services:
-  - type: web
-    name: journal-backend
-    runtime: node
-    rootDir: .
-    buildCommand: npm install
-    startCommand: npm start --workspace=server
