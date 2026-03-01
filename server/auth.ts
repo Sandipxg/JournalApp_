@@ -2,6 +2,8 @@ import { betterAuth } from "better-auth";
 import pg from "pg";
 
 export const auth = betterAuth({
+    baseURL: process.env.BETTER_AUTH_URL || "http://localhost:3001",
+    secret: process.env.BETTER_AUTH_SECRET,
     database: new pg.Pool({
         connectionString: process.env.DATABASE_URL,
     }),

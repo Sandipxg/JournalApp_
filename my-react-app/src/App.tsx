@@ -69,7 +69,7 @@ function App() {
   const signInWithGoogle = async () => {
     await authClient.signIn.social({
       provider: "google",
-      callbackURL: "/",
+      callbackURL: import.meta.env.VITE_APP_URL || "http://localhost:5173",
     })
   }
 
