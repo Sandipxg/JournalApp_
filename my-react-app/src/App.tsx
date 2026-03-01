@@ -3,19 +3,42 @@ import './App.css'
 import { client } from './rpc'
 import type { Entry } from '@shared/contract'
 import { authClient } from './lib/auth-client'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { z } from 'zod'
+
+const authSchema = z.object({
+  name: z.string().optional(),
+  email: z.string().email("Invalid email address"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
+})
+
+type AuthFormValues = z.infer<typeof authSchema>
+
+const entrySchema = z.object({
+  title: z.string().min(1, "Title is required"),
+  content: z.string().min(1, "Content is required"),
+})
+
+type EntryFormValues = z.infer<typeof entrySchema>
 
 function App() {
   const { data: session, isPending } = authClient.useSession()
 
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [name, setName] = useState('')
   const [isRegistering, setIsRegistering] = useState(false)
   const [error, setError] = useState('')
 
   const [entries, setEntries] = useState<Entry[]>([])
-  const [currentEntry, setCurrentEntry] = useState('')
-  const [currentTitle, setCurrentTitle] = useState('')
+
+  const authForm = useForm<AuthFormValues>({
+    resolver: zodResolver(authSchema),
+    defaultValues: { name: '', email: '', password: '' }
+  })
+
+  const entryForm = useForm<EntryFormValues>({
+    resolver: zodResolver(entrySchema),
+    defaultValues: { title: '', content: '' }
+  })
 
   // Load entries from backend when session is available
   useEffect(() => {
@@ -35,28 +58,29 @@ function App() {
     fetchEntries()
   }, [session?.user])
 
-  const handleAuth = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const onAuthSubmit = async (data: AuthFormValues) => {
     setError('')
     try {
       if (isRegistering) {
+        if (!data.name?.trim()) {
+          authForm.setError("name", { message: "Name is required for registration" })
+          return
+        }
         const { error } = await authClient.signUp.email({
-          email,
-          password,
-          name,
+          email: data.email,
+          password: data.password,
+          name: data.name,
         })
         if (error) throw error
       } else {
         const { error } = await authClient.signIn.email({
-          email,
-          password,
+          email: data.email,
+          password: data.password,
         })
         if (error) throw error
       }
 
-      setEmail('')
-      setPassword('')
-      setName('')
+      authForm.reset()
     } catch (err: any) {
       setError(err.message || 'Auth failed')
     }
@@ -73,18 +97,17 @@ function App() {
     })
   }
 
-  const addEntry = async () => {
-    if (currentEntry.trim() && currentTitle.trim() && session?.user) {
+  const onAddEntrySubmit = async (data: EntryFormValues) => {
+    if (session?.user) {
       try {
         const savedEntry = await client.addEntry({
-          title: currentTitle,
-          content: currentEntry,
+          title: data.title,
+          content: data.content,
         })
 
         if (savedEntry && savedEntry.id) {
           setEntries(prev => [savedEntry, ...prev])
-          setCurrentEntry('')
-          setCurrentTitle('')
+          entryForm.reset()
         }
       } catch (err) {
         console.error("Error saving entry:", err)
@@ -117,36 +140,35 @@ function App() {
         </header>
 
         <div className="container auth-container">
-          <form className="entry-form auth-form" onSubmit={handleAuth}>
+          <form className="entry-form auth-form" onSubmit={authForm.handleSubmit(onAuthSubmit)}>
             <h2>{isRegistering ? 'Create Account' : 'Welcome Back'}</h2>
             {error && <p className="error-message">{error}</p>}
             {isRegistering && (
-              <input
-                type="text"
-                placeholder="Name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className="title-input"
-                required
-              />
+              <>
+                <input
+                  type="text"
+                  placeholder="Name"
+                  {...authForm.register("name")}
+                  className="title-input"
+                />
+                {authForm.formState.errors.name && <p className="error-message">{authForm.formState.errors.name.message}</p>}
+              </>
             )}
             <input
               type="email"
               placeholder="Email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              {...authForm.register("email")}
               className="title-input"
-              required
             />
+            {authForm.formState.errors.email && <p className="error-message">{authForm.formState.errors.email.message}</p>}
             <input
               type="password"
               placeholder="Password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              {...authForm.register("password")}
               className="title-input"
-              required
             />
-            <button type="submit" className="add-button">
+            {authForm.formState.errors.password && <p className="error-message">{authForm.formState.errors.password.message}</p>}
+            <button type="submit" className="add-button" disabled={authForm.formState.isSubmitting}>
               {isRegistering ? 'Sign Up' : 'Log In'}
             </button>
             <div className="divider"><span>OR</span></div>
@@ -187,25 +209,25 @@ function App() {
       </header>
 
       <div className="container">
-        <div className="entry-form">
+        <form className="entry-form" onSubmit={entryForm.handleSubmit(onAddEntrySubmit)}>
           <input
             type="text"
             placeholder="Entry title..."
-            value={currentTitle}
-            onChange={(e) => setCurrentTitle(e.target.value)}
+            {...entryForm.register("title")}
             className="title-input"
           />
+          {entryForm.formState.errors.title && <p className="error-message">{entryForm.formState.errors.title.message}</p>}
           <textarea
             placeholder="What's on your mind today?"
-            value={currentEntry}
-            onChange={(e) => setCurrentEntry(e.target.value)}
+            {...entryForm.register("content")}
             className="entry-textarea"
             rows={6}
           />
-          <button onClick={addEntry} className="add-button">
+          {entryForm.formState.errors.content && <p className="error-message">{entryForm.formState.errors.content.message}</p>}
+          <button type="submit" className="add-button" disabled={entryForm.formState.isSubmitting}>
             Add Entry
           </button>
-        </div>
+        </form>
 
         <div className="entries-list">
           <h2>Your Entries ({entries.length})</h2>
