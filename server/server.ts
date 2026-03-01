@@ -39,17 +39,16 @@ const rpcHandler = new RPCHandler(router)
 // oRPC endpoint – matches /rpc and any sub-path
 app.all(['/rpc', '/rpc/*'], async (req, res) => {
   try {
+    const session = await auth.api.getSession({
+      headers: new Headers(req.headers as any)
+    });
+
     const matched = await rpcHandler.handle(req, res, {
       prefix: '/rpc',
-      context: async () => {
-        const session = await auth.api.getSession({
-          headers: new Headers(req.headers as any)
-        });
-        return {
-          db,
-          user: session?.user ?? null,
-          session: session?.session ?? null
-        }
+      context: {
+        db,
+        user: session?.user ?? null,
+        session: session?.session ?? null
       }
     })
     if (!matched.matched) {
