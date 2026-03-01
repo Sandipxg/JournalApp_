@@ -14,5 +14,10 @@ export const auth = betterAuth({
             clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
         },
     },
-    trustedOrigins: ["http://localhost:5173", "http://localhost:3000"],
+    trustedOrigins: [
+        "http://localhost:5173",
+        "http://localhost:3000",
+        "https://journalapp-pi.vercel.app",
+        ...(process.env.ALLOWED_ORIGIN ? [process.env.ALLOWED_ORIGIN] : []),
+    ],
 });

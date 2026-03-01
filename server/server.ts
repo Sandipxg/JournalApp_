@@ -24,8 +24,15 @@ Sentry.init({
 const app = express()
 const PORT = Number(process.env.PORT) || 3001
 
+const allowedOrigins = [
+  "http://localhost:5173",
+  "http://localhost:3000",
+  "https://journalapp-pi.vercel.app",
+  ...(process.env.ALLOWED_ORIGIN ? [process.env.ALLOWED_ORIGIN] : []),
+]
+
 app.use(cors({
-  origin: ["http://localhost:5173", "http://localhost:3000"], // Added both common Vite ports
+  origin: allowedOrigins,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   credentials: true
 }))
