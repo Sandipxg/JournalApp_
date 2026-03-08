@@ -6,6 +6,7 @@ import { authClient } from './lib/auth-client'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
+import DocumentationViewer from './DocumentationViewer'
 
 const authSchema = z.object({
   name: z.string().optional(),
@@ -26,6 +27,7 @@ function App() {
   const { data: session, isPending } = authClient.useSession()
 
   const [isRegistering, setIsRegistering] = useState(false)
+  const [showDocs, setShowDocs] = useState(false)
   const [error, setError] = useState('')
 
   const [entries, setEntries] = useState<Entry[]>([])
@@ -131,6 +133,10 @@ function App() {
     return <div className="app loading">Loading session...</div>
   }
 
+  if (showDocs) {
+    return <DocumentationViewer onClose={() => setShowDocs(false)} />
+  }
+
   if (!session?.user) {
     return (
       <div className="app">
@@ -183,7 +189,7 @@ function App() {
             </button>
             <p className="auth-toggle">
               {isRegistering ? 'Already have an account? ' : "Don't have an account? "}
-              <button
+            <button
                 type="button"
                 onClick={() => setIsRegistering(!isRegistering)}
                 className="link-button"
@@ -191,6 +197,16 @@ function App() {
                 {isRegistering ? 'Log In' : 'Sign Up'}
               </button>
             </p>
+            <div style={{ marginTop: '1.5rem', textAlign: 'center' }}>
+              <button 
+                type="button" 
+                onClick={() => setShowDocs(true)} 
+                className="link-button"
+                style={{ opacity: 0.8, fontSize: '0.9rem' }}
+              >
+                📖 View Architecture Documentation
+              </button>
+            </div>
           </form>
         </div>
       </div>
@@ -201,6 +217,13 @@ function App() {
     <div className="app">
       <header className="header">
         <div className="user-info">
+          <button 
+            onClick={() => setShowDocs(true)} 
+            className="link-button" 
+            style={{ marginRight: '1rem', color: 'inherit' }}
+          >
+            📚 Docs
+          </button>
           <span>Welcome, {session.user.name}</span>
           <button onClick={logout} className="logout-button">Logout</button>
         </div>
