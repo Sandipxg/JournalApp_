@@ -2,6 +2,14 @@ import { betterAuth } from "better-auth";
 import pg from "pg";
 
 export const auth = betterAuth({
+    advanced: {
+        defaultCookieAttributes: {
+            httpOnly: true,
+            secure: true,
+            sameSite: "none",
+        },
+        useSecureCookies: true,
+    },
     basePath: "/api/auth",
     baseURL: process.env.BETTER_AUTH_URL || "http://localhost:3001",
     secret: process.env.BETTER_AUTH_SECRET,
