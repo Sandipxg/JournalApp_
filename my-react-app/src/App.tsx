@@ -96,7 +96,9 @@ function App() {
     await authClient.signIn.social({
       provider: "google",
       callbackURL: import.meta.env.VITE_APP_URL || "http://localhost:5173",
-      errorCallbackURL: `${import.meta.env.VITE_APP_URL}`
+      errorCallbackURL: import.meta.env.VITE_APP_URL || "http://localhost:5173",
+    }, {
+      throw: true
     })
   }
 
