@@ -96,6 +96,7 @@ function App() {
     await authClient.signIn.social({
       provider: "google",
       callbackURL: import.meta.env.VITE_APP_URL || "http://localhost:5173",
+      errorCallbackURL: `${import.meta.env.VITE_APP_URL}`
     })
   }
 
@@ -189,7 +190,7 @@ function App() {
             </button>
             <p className="auth-toggle">
               {isRegistering ? 'Already have an account? ' : "Don't have an account? "}
-            <button
+              <button
                 type="button"
                 onClick={() => setIsRegistering(!isRegistering)}
                 className="link-button"
@@ -198,9 +199,9 @@ function App() {
               </button>
             </p>
             <div style={{ marginTop: '1.5rem', textAlign: 'center' }}>
-              <button 
-                type="button" 
-                onClick={() => setShowDocs(true)} 
+              <button
+                type="button"
+                onClick={() => setShowDocs(true)}
                 className="link-button"
                 style={{ opacity: 0.8, fontSize: '0.9rem' }}
               >
@@ -217,9 +218,9 @@ function App() {
     <div className="app">
       <header className="header">
         <div className="user-info">
-          <button 
-            onClick={() => setShowDocs(true)} 
-            className="link-button" 
+          <button
+            onClick={() => setShowDocs(true)}
+            className="link-button"
             style={{ marginRight: '1rem', color: 'inherit' }}
           >
             📚 Docs

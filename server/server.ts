@@ -25,21 +25,28 @@ const app = express()
 const PORT = Number(process.env.PORT) || 3001
 
 const allowedOrigins = [
-  "http://localhost:5173",
-  "http://localhost:3000",
-  "https://journalapp-pi.vercel.app",
+  'http://localhost:5173',
+  'http://localhost:3001',
+  'https://journalapp-pi.vercel.app',
   ...(process.env.ALLOWED_ORIGIN ? [process.env.ALLOWED_ORIGIN] : []),
 ]
 
+// 1. CORS at the very top to handle all preflights
 app.use(cors({
   origin: allowedOrigins,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   credentials: true
 }))
 
-app.all("/api/auth/*", (req, res) => {
-  return toNodeHandler(auth)(req, res);
-});
+// 2. Auth Handler
+// BETTER_AUTH_URL and basePath must align with this route
+app.all('/api/auth/*', (req, res) => {
+  console.log(`[AUTH] ${req.method} ${req.url}`)
+  return toNodeHandler(auth)(req, res)
+})
+
+// 3. Body Parser and other middleware AFTER auth
+app.use(express.json())
 
 const rpcHandler = new RPCHandler(router)
 
@@ -68,8 +75,6 @@ app.all(['/rpc', '/rpc/*'], async (req, res) => {
     }
   }
 })
-
-app.use(express.json())
 
 // Root endpoint
 app.get('/', (req, res) => {
