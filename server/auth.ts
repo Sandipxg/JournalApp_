@@ -1,6 +1,8 @@
 import { betterAuth } from "better-auth";
 import pg from "pg";
 
+const isProduction = process.env.NODE_ENV === "production";
+
 export const auth = betterAuth({
     advanced: {
         defaultCookieAttributes: {
@@ -36,4 +38,11 @@ export const auth = betterAuth({
         "https://journalapp-pi.vercel.app",
         ...(process.env.ALLOWED_ORIGIN ? [process.env.ALLOWED_ORIGIN] : []),
     ],
+    advanced: {
+        cookieOptions: {
+            sameSite: isProduction ? "none" : "lax",
+            secure: isProduction,
+        },
+    },
 });
+
