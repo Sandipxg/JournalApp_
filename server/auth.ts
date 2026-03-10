@@ -7,10 +7,10 @@ export const auth = betterAuth({
     advanced: {
         defaultCookieAttributes: {
             httpOnly: true,
-            secure: true,
-            sameSite: "none",
+            secure: isProduction,
+            sameSite: isProduction ? "none" : "lax",
         },
-        useSecureCookies: true,
+        useSecureCookies: isProduction,
     },
     basePath: "/api/auth",
     baseURL: process.env.BETTER_AUTH_URL || "http://localhost:3001",
@@ -38,11 +38,5 @@ export const auth = betterAuth({
         "https://journalapp-pi.vercel.app",
         ...(process.env.ALLOWED_ORIGIN ? [process.env.ALLOWED_ORIGIN] : []),
     ],
-    advanced: {
-        cookieOptions: {
-            sameSite: isProduction ? "none" : "lax",
-            secure: isProduction,
-        },
-    },
 });
 
