@@ -13,8 +13,19 @@ const i = implement(contract).$context<{
 
 const router = {
     getEntries: i.getEntries.handler(async ({ context }) => {
-        if (!context.user) throw new Error('Unauthorized')
-        return await context.db.entry.where({ userId: context.user.id }).order({ id: 'DESC' })
+        try {
+            if (!context.user) {
+                console.log('[RPC-ERROR] No user in context');
+                throw new Error('Unauthorized');
+            }
+            console.log(`[RPC] Fetching entries for user ${context.user.id}`);
+            const entries = await context.db.entry.where({ userId: context.user.id }).order({ id: 'DESC' })
+            console.log('[DEBUG] Found entries:', entries.length)
+            return entries
+        } catch (error: any) {
+            console.error('[RPC-ERROR] in getEntries:', error);
+            throw error; // Rethrow to let the server-level handler catch it
+        }
     }),
 
     addEntry: i.addEntry.handler(async ({ input, context }) => {
