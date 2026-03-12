@@ -13,7 +13,7 @@ export type Entry = z.infer<typeof EntrySchema>
 export const contract = oc.router({
     getEntries: oc
         .route({ method: 'GET' })
-        .input(z.object({ userId: z.string().optional() }))
+        .input(z.object({ userId: z.string().optional() }).optional())
         .output(z.array(EntrySchema)),
 
     addEntry: oc
